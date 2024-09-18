@@ -1,12 +1,15 @@
 package com.javaprojects.order_service.service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import com.javaprojects.order_service.dto.InventoryResponse;
 import com.javaprojects.order_service.dto.OrderRequest;
 import com.javaprojects.order_service.model.Order;
 import com.javaprojects.order_service.model.OrderLineItems;
@@ -14,13 +17,16 @@ import com.javaprojects.order_service.model.OrderLineItemsDTO;
 import com.javaprojects.order_service.repository.OrderRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final WebClient webCleint;
     
     public void placeOrder(OrderRequest orderRequest){
         Order order = new Order();
@@ -32,7 +38,27 @@ public class OrderService {
 
         order.setOrderLineItemsList(orderLineItems);
 
-        orderRepository.save(order);
+        // We need to check 1st if the order is present in the inventory then only accordingly process  the order first.
+
+      List<String> skuCodes =  order.getOrderLineItemsList().stream()
+        .map(orderLineItem -> orderLineItem.getSkuCode())
+        .toList();
+
+        InventoryResponse[] inventoryResponses = webCleint.get()
+                        .uri("http://localhost:8082/api/inventory", 
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                        .retrieve()
+                        .bodyToMono(InventoryResponse[].class)
+                        .block();
+
+            boolean allProductsInStock = Arrays.stream(inventoryResponses)
+                                        .allMatch(inventoryResponse -> inventoryResponse.isInStock());
+
+        if(allProductsInStock){
+            orderRepository.save(order);
+        } else{
+            throw new IllegalArgumentException("Product is not in the Stock, please try later");
+        }
     }
 
     private OrderLineItems mapToDTO(OrderLineItemsDTO orderLineItemsDto){
