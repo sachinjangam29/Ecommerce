@@ -1,3 +1,7 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.project.sourcePaths": [
+        "inventory-service/inventory-service/src/main/java/com/javaprojects/inventory_service/model"
+    ],
+    "java.compile.nullAnalysis.mode": "automatic"
 }
