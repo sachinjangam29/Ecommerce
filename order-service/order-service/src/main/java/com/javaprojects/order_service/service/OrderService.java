@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final WebClient webCleint;
+    private final WebClient.Builder webCleintBuilder;
     
     public void placeOrder(OrderRequest orderRequest){
         Order order = new Order();
@@ -44,8 +44,8 @@ public class OrderService {
         .map(orderLineItem -> orderLineItem.getSkuCode())
         .toList();
 
-        InventoryResponse[] inventoryResponses = webCleint.get()
-                        .uri("http://localhost:8082/api/inventory", 
+        InventoryResponse[] inventoryResponses = webCleintBuilder.build().get()
+                        .uri("http://inventory-service/api/inventory", 
                         uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
                         .retrieve()
                         .bodyToMono(InventoryResponse[].class)

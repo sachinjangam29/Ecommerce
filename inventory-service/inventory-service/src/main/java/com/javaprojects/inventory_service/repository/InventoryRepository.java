@@ -9,5 +9,5 @@ import com.javaprojects.inventory_service.model.Inventory;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
-    List<Inventory> findBySkuCodeIn(List<String> skuCode); 
+    List<Inventory> findBySkuCodeIn(List<String> skuCode);
 }
